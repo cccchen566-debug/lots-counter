@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Position Calculator</title>
+<style>
+  :root {
+    --bg: #0f0f0f;
+    --surface: #1a1a1a;
+    --surface2: #222222;
+    --border: #2e2e2e;
+    --border-focus: #4a4a4a;
+    --text: #f0f0f0;
+    --muted: #888;
+    --accent: #c9a84c;
+    --accent-dim: rgba(201,168,76,0.12);
+    --danger: #e05555;
+    --danger-dim: rgba(224,85,85,0.1);
+    --success: #4caf7d;
+    --success-dim: rgba(76,175,125,0.1);
+    --radius: 8px;
+    --font: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 13px;
+    min-height: 100vh;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 520px; margin: 0 auto; }
+  header { margin-bottom: 2rem; }
+  header h1 {
+    font-size: 18px;
+    font-weight: 400;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+  header p { color: var(--muted); font-size: 11px; margin-top: 4px; letter-spacing: 0.05em; }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .card-title {
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+  }
+
+  .field { margin-bottom: 1rem; }
+  .field:last-child { margin-bottom: 0; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+  }
+  .field label span.optional {
+    color: #555;
+    font-size: 10px;
+    margin-left: 4px;
+  }
+
+  input[type="number"], select {
+    width: 100%;
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 14px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+  input[type="number"]:focus, select:focus { border-color: var(--accent); }
+  input[type="number"]::placeholder { color: #444; }
+  select option { background: #1a1a1a; }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .r-selector {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+  }
+  .r-btn {
+    background: var(--surface2);
+    border: 0.5px solid var(--border);
+    border-radius: 5px;
+    color: var(--muted);
+    font-family: var(--font);
+    font-size: 12px;
+    padding: 8px 4px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .r-btn:hover { border-color: var(--border-focus); color: var(--text); }
+  .r-btn.active {
+    background: var(--accent-dim);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .r-custom-wrap { margin-top: 8px; display: none; }
+  .r-custom-wrap.show { display: block; }
+  .r-custom-wrap label { margin-bottom: 4px; font-size: 11px; color: var(--muted); letter-spacing: 0.08em; display: block; }
+
+  .calc-btn {
+    width: 100%;
+    background: var(--accent);
+    border: none;
+    border-radius: var(--radius);
+    color: #0f0f0f;
+    font-family: var(--font);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 14px;
+    cursor: pointer;
+    transition: opacity 0.15s, transform 0.1s;
+    margin-bottom: 1rem;
+  }
+  .calc-btn:hover { opacity: 0.88; }
+  .calc-btn:active { transform: scale(0.98); }
+
+  .result-card {
+    display: none;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .result-card.show { display: block; }
+  .result-card.error { border-color: var(--danger); }
+  .result-card.success { border-color: var(--accent); }
+
+  .result-header {
+    padding: 10px 1.25rem;
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 0.5px solid var(--border);
+  }
+  .error .result-header { color: var(--danger); background: var(--danger-dim); }
+  .success .result-header { color: var(--accent); background: var(--accent-dim); }
+
+  .result-body { padding: 1.25rem; }
+  .error-msg { color: var(--danger); font-size: 13px; }
+
+  .main-result {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 1.25rem;
+  }
+  .main-result .lots {
+    font-size: 42px;
+    font-weight: 400;
+    color: var(--accent);
+    letter-spacing: -0.02em;
+  }
+  .main-result .unit { color: var(--muted); font-size: 13px; }
+
+  .stats { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .stat {
+    background: var(--surface2);
+    border-radius: 5px;
+    padding: 10px 12px;
+  }
+  .stat .lbl { font-size: 10px; color: var(--muted); letter-spacing: 0.08em; margin-bottom: 4px; }
+  .stat .val { font-size: 15px; color: var(--text); }
+  .stat .val.neg { color: var(--danger); }
+  .stat .val.pos { color: var(--success); }
+  .stat .val.accent { color: var(--accent); }
+
+  .divider { height: 0.5px; background: var(--border); margin: 1rem 0; }
+
+  .dir-badge {
+    display: inline-block;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-left: 8px;
+    vertical-align: middle;
+  }
+  .dir-long { background: rgba(76,175,125,0.15); color: var(--success); }
+  .dir-short { background: rgba(224,85,85,0.12); color: var(--danger); }
+
+  footer { margin-top: 2rem; text-align: center; color: #333; font-size: 10px; letter-spacing: 0.1em; }
+</style>
+</head>
+<body>
+<div class="container">
+  <header>
+    <h1>Position Calculator</h1>
+    <p>外匯 · 貴金屬 · BTC &nbsp;·&nbsp; cTrader</p>
+  </header>
+
+  <div class="card">
+    <div class="card-title">帳戶設定</div>
+    <div class="row2">
+      <div class="field">
+        <label>本金 (USD)</label>
+        <input type="number" id="capital" placeholder="10000" min="1" step="any">
+      </div>
+      <div class="field">
+        <label>品種</label>
+        <select id="symbol">
+          <option value="EURUSD">EURUSD</option>
+          <option value="XAUUSD">XAUUSD（黃金）</option>
+          <option value="XAGUSD">XAGUSD（白銀）</option>
+          <option value="BTCUSD">BTCUSD（比特幣）</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">1R 設定</div>
+    <div class="r-selector">
+      <div class="r-btn" data-r="0.5">0.5%</div>
+      <div class="r-btn active" data-r="1">1%</div>
+      <div class="r-btn" data-r="2">2%</div>
+      <div class="r-btn" data-r="custom">自訂</div>
+    </div>
+    <div class="r-custom-wrap" id="rCustomWrap">
+      <label>自訂 R (%)</label>
+      <input type="number" id="rCustom" placeholder="1.5" min="0.01" max="100" step="0.01">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">價格輸入</div>
+    <div class="field">
+      <label>開倉價</label>
+      <input type="number" id="entry" placeholder="0.00000" step="any">
+    </div>
+    <div class="field">
+      <label>止損價</label>
+      <input type="number" id="stop" placeholder="0.00000" step="any">
+    </div>
+    <div class="field">
+      <label>止盈價 <span class="optional">選填</span></label>
+      <input type="number" id="tp" placeholder="0.00000" step="any">
+    </div>
+  </div>
+
+  <button class="calc-btn" onclick="calculate()">計算手數</button>
+
+  <div class="result-card" id="resultCard">
+    <div class="result-header" id="resultHeader">結果</div>
+    <div class="result-body" id="resultBody"></div>
+  </div>
+
+  <footer>FEE $3 / LOT / SIDE &nbsp;·&nbsp; MIN 0.01 LOT</footer>
+</div>
+
+<script>
+const CONTRACTS = {
+  EURUSD: 100000,
+  XAUUSD: 100,
+  XAGUSD: 5000,
+  BTCUSD: 1
+};
+
+let selectedR = 1;
+
+document.querySelectorAll('.r-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.r-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const v = btn.dataset.r;
+    const wrap = document.getElementById('rCustomWrap');
+    if (v === 'custom') {
+      wrap.classList.add('show');
+      selectedR = null;
+    } else {
+      wrap.classList.remove('show');
+      selectedR = parseFloat(v);
+    }
+  });
+});
+
+document.getElementById('rCustom').addEventListener('input', function() {
+  selectedR = parseFloat(this.value) || null;
+});
+
+function fmt(n, decimals) {
+  decimals = decimals !== undefined ? decimals : 2;
+  return n.toLocaleString('en-US', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
+}
+
+function calculate() {
+  const capital = parseFloat(document.getElementById('capital').value);
+  const symbol  = document.getElementById('symbol').value;
+  const entry   = parseFloat(document.getElementById('entry').value);
+  const stop    = parseFloat(document.getElementById('stop').value);
+  const tpRaw   = document.getElementById('tp').value;
+  const tp      = tpRaw !== '' ? parseFloat(tpRaw) : null;
+
+  const card   = document.getElementById('resultCard');
+  const header = document.getElementById('resultHeader');
+  const body   = document.getElementById('resultBody');
+
+  const rPct = selectedR;
+
+  function showError(msg) {
+    card.className = 'result-card show error';
+    header.textContent = '錯誤';
+    body.innerHTML = '<div class="error-msg">' + msg + '</div>';
+  }
+
+  if (!capital || capital <= 0)        return showError('請輸入有效的本金');
+  if (!rPct || rPct <= 0)              return showError('請輸入有效的 1R 設定');
+  if (!entry || entry <= 0)            return showError('請輸入有效的開倉價');
+  if (!stop  || stop  <= 0)            return showError('請輸入有效的止損價');
+  if (entry === stop)                  return showError('開倉價與止損價不能相同');
+  if (tp !== null && tp === entry)     return showError('止盈價與開倉價不能相同');
+
+  const isLong  = stop < entry;
+  const isShort = stop > entry;
+
+  if (tp !== null) {
+    if (isLong  && tp <= entry) return showError('做多時止盈價必須高於開倉價');
+    if (isShort && tp >= entry) return showError('做空時止盈價必須低於開倉價');
+  }
+
+  const mult       = CONTRACTS[symbol];
+  const R          = capital * (rPct / 100);
+  const stopDiff   = Math.abs(entry - stop);
+  const lossPerLot = stopDiff * mult;
+  const feePerLot  = 6;
+
+  if (lossPerLot === 0) return showError('止損點差太小，無法計算');
+
+  const rawLots = R / (lossPerLot + feePerLot);
+  const lots    = Math.floor(rawLots * 100) / 100;
+
+  if (lots < 0.01) {
+    return showError(
+      '計算手數為 ' + rawLots.toFixed(4) + ' 手，低於最小手數 0.01<br>' +
+      '<small style="color:#666;margin-top:4px;display:block">建議提高本金或增大止損空間</small>'
+    );
+  }
+
+  const totalFee  = feePerLot * lots;
+  const stopLoss  = lossPerLot * lots + totalFee;
+  const dirLabel  = isLong
+    ? '<span class="dir-badge dir-long">LONG</span>'
+    : '<span class="dir-badge dir-short">SHORT</span>';
+
+  let tpHTML = '';
+  if (tp !== null) {
+    const tpDiff  = Math.abs(tp - entry);
+    const tpGross = tpDiff * mult * lots;
+    const tpNet   = tpGross - totalFee;
+    const rr      = tpNet / R;
+    tpHTML =
+      '<div class="divider"></div>' +
+      '<div style="font-size:10px;letter-spacing:.15em;color:var(--muted);text-transform:uppercase;margin-bottom:10px">止盈分析</div>' +
+      '<div class="stats">' +
+        '<div class="stat"><div class="lbl">止盈毛利</div><div class="val pos">+$' + fmt(tpGross) + '</div></div>' +
+        '<div class="stat"><div class="lbl">止盈淨利</div><div class="val pos">+$' + fmt(tpNet) + '</div></div>' +
+        '<div class="stat" style="grid-column:1/-1"><div class="lbl">實際 R:R</div><div class="val accent">1 : ' + fmt(rr, 2) + '</div></div>' +
+      '</div>';
+  }
+
+  card.className = 'result-card show success';
+  header.innerHTML = '建議手數' + dirLabel;
+  body.innerHTML =
+    '<div class="main-result">' +
+      '<div class="lots">' + lots.toFixed(2) + '</div>' +
+      '<div class="unit">LOT</div>' +
+    '</div>' +
+    '<div class="stats">' +
+      '<div class="stat"><div class="lbl">1R 金額</div><div class="val">$' + fmt(R) + '</div></div>' +
+      '<div class="stat"><div class="lbl">最大虧損（含手續費）</div><div class="val neg">-$' + fmt(stopLoss) + '</div></div>' +
+      '<div class="stat"><div class="lbl">手續費合計</div><div class="val">$' + fmt(totalFee) + '</div></div>' +
+      '<div class="stat"><div class="lbl">止損點差</div><div class="val">' + stopDiff.toFixed(5) + '</div></div>' +
+    '</div>' +
+    tpHTML;
+}
+</script>
+</body>
+</html>
